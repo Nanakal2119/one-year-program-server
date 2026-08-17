@@ -3,37 +3,21 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
-
-const studentRoutes =
-  require("./routes/studentRoutes");
-
-const courseRoutes =
-  require("./routes/courseRoutes");
-
-const examRoutes =
-  require("./routes/examRoutes");
-
-const resultRoutes =
-  require("./routes/resultRoutes");
-
-const registrationRoutes =
-  require("./routes/registrationRoutes");
-
-const learningResourceRoutes =
-  require("./routes/learningResourceRoutes");
-
+const studentRoutes = require("./routes/studentRoutes");
+const courseRoutes = require("./routes/courseRoutes");
+const examRoutes = require("./routes/examRoutes");
+const resultRoutes = require("./routes/resultRoutes");
+const registrationRoutes = require("./routes/registrationRoutes");
+const learningResourceRoutes = require("./routes/learningResourceRoutes");
 
 const app = express();
-
 
 /* =========================
    MIDDLEWARE
 ========================= */
 
 app.use(cors());
-
 app.use(express.json());
-
 
 /* =========================
    ROUTES
@@ -69,44 +53,59 @@ app.use(
   learningResourceRoutes
 );
 
-
 /* =========================
    TEST ROUTE
 ========================= */
 
 app.get("/", (req, res) => {
-
   res.json({
-    message:
-      "Student Portal API is running",
+    message: "Student Portal API is running",
   });
-
 });
 
-
 /* =========================
-   DATABASE + SERVER
+   DATABASE CONNECTION
 ========================= */
 
-const PORT =
-  process.env.PORT || 5000;
+let isConnected = false;
 
+const connectDB = async () => {
+  if (isConnected) {
+    return;
+  }
 
-const startServer = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
 
+    isConnected = true;
+
     console.log("MongoDB connected successfully");
-
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-
   } catch (error) {
     console.error("MongoDB connection failed:");
     console.error(error.message);
-    process.exit(1);
+
+    throw error;
   }
 };
 
-startServer();
+/* =========================
+   VERCEL SERVERLESS HANDLER
+========================= */
+
+const handler = async (req, res) => {
+  try {
+    await connectDB();
+
+    return app(req, res);
+  } catch (error) {
+    console.error("Server error:", error);
+
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+module.exports = handler;
+
