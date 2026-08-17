@@ -3,21 +3,37 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
-const studentRoutes = require("./routes/studentRoutes");
-const courseRoutes = require("./routes/courseRoutes");
-const examRoutes = require("./routes/examRoutes");
-const resultRoutes = require("./routes/resultRoutes");
-const registrationRoutes = require("./routes/registrationRoutes");
-const learningResourceRoutes = require("./routes/learningResourceRoutes");
+
+const studentRoutes =
+  require("./routes/studentRoutes");
+
+const courseRoutes =
+  require("./routes/courseRoutes");
+
+const examRoutes =
+  require("./routes/examRoutes");
+
+const resultRoutes =
+  require("./routes/resultRoutes");
+
+const registrationRoutes =
+  require("./routes/registrationRoutes");
+
+const learningResourceRoutes =
+  require("./routes/learningResourceRoutes");
+
 
 const app = express();
+
 
 /* =========================
    MIDDLEWARE
 ========================= */
 
 app.use(cors());
+
 app.use(express.json());
+
 
 /* =========================
    ROUTES
@@ -53,54 +69,44 @@ app.use(
   learningResourceRoutes
 );
 
+
 /* =========================
    TEST ROUTE
 ========================= */
 
 app.get("/", (req, res) => {
+
   res.json({
-    message: "Student Portal API is running",
+    message:
+      "Student Portal API is running",
   });
+
 });
 
-/* =========================
-   DATABASE CONNECTION
-========================= */
-
-let isConnected = false;
-
-async function connectDB() {
-  if (isConnected) {
-    return;
-  }
-
-  if (!process.env.MONGO_URI) {
-    throw new Error("MONGO_URI is not defined");
-  }
-
-  await mongoose.connect(process.env.MONGO_URI);
-
-  isConnected = true;
-
-  console.log("MongoDB connected successfully");
-}
 
 /* =========================
-   VERCEL HANDLER
+   DATABASE + SERVER
 ========================= */
 
-app.use(async (req, res, next) => {
+const PORT =
+  process.env.PORT || 5000;
+
+
+const startServer = async () => {
   try {
-    await connectDB();
-    next();
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
+    await mongoose.connect(process.env.MONGO_URI);
 
-    res.status(500).json({
-      message: "Database connection failed",
-      error: error.message,
+    console.log("MongoDB connected successfully");
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
-  }
-});
 
-module.exports = app;
+  } catch (error) {
+    console.error("MongoDB connection failed:");
+    console.error(error.message);
+    process.exit(1);
+  }
+};
+
+startServer();
