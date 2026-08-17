@@ -69,43 +69,38 @@ app.get("/", (req, res) => {
 
 let isConnected = false;
 
-const connectDB = async () => {
+async function connectDB() {
   if (isConnected) {
     return;
   }
 
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-
-    isConnected = true;
-
-    console.log("MongoDB connected successfully");
-  } catch (error) {
-    console.error("MongoDB connection failed:");
-    console.error(error.message);
-
-    throw error;
+  if (!process.env.MONGO_URI) {
+    throw new Error("MONGO_URI is not defined");
   }
-};
+
+  await mongoose.connect(process.env.MONGO_URI);
+
+  isConnected = true;
+
+  console.log("MongoDB connected successfully");
+}
 
 /* =========================
-   VERCEL SERVERLESS HANDLER
+   VERCEL HANDLER
 ========================= */
 
-const handler = async (req, res) => {
+app.use(async (req, res, next) => {
   try {
     await connectDB();
-
-    return app(req, res);
+    next();
   } catch (error) {
-    console.error("Server error:", error);
+    console.error("MongoDB connection error:", error);
 
-    return res.status(500).json({
-      message: "Server error",
+    res.status(500).json({
+      message: "Database connection failed",
       error: error.message,
     });
   }
-};
+});
 
-module.exports = handler;
-
+module.exports = app;
