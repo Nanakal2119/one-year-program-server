@@ -1,0 +1,5 @@
+const mongoose = require("mongoose");
+const Exam = require("../models/Exam");
+const Result = require("../models/Result");
+const submitExam = async (req,res)=>{try{const {studentId,score}=req.body||{};const {id}=req.params;let exam=null;if(mongoose.Types.ObjectId.isValid(id))exam=await Exam.findById(id);if(!exam)exam=await Exam.findOne({courseCode:id});if(!exam)return res.status(404).json({message:"Exam not found."});const examScore=score!==undefined?Number(score):0;let result=await Result.findOne({studentId,courseCode:exam.courseCode});const currentAssignmentScore=result?result.assignmentScore:0;const {finalScore,grade,status}=Result.calculateResult(currentAssignmentScore,examScore);if(result){result.examScore=examScore;result.finalScore=finalScore;result.grade=grade;result.status=status;await result.save();}else result=await Result.create({studentId,courseCode:exam.courseCode,courseName:exam.courseName,assignmentScore:0,examScore,finalScore,grade,status});return res.json({message:"Exam submitted successfully.",result});}catch(error){return res.status(500).json({message:"Failed to submit exam.",error:error.message});}};
+module.exports={submitExam};
